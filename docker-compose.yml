@@ -1,0 +1,54 @@
+services:
+  backend:
+    build: .
+    container_name: backend
+    env_file:
+      - .env
+    ports:
+      - "8003:8000"
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - .:/app
+    networks:
+      - bitpin_net
+
+  celery_worker:
+    build: .
+    container_name: celery_worker
+    command: celery -A config worker --loglevel=info -Q vote_queue
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    networks:
+      - bitpin_net
+
+  db:
+    image: postgres:13
+    container_name: postgres_db
+    env_file:
+      - .env
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    networks:
+      - bitpin_net
+
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6399:6379"
+    networks:
+      - bitpin_net
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  bitpin_net:
+    driver: bridge
